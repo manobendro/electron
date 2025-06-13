@@ -7,11 +7,16 @@
 
 #include "shell/browser/ui/cocoa/electron_ns_window.h"
 
+@interface NSWindow (Private)
+- (void)_setPreventsActivation:(BOOL)preventsActivation;
+@end
+
 @interface ElectronNSPanel : ElectronNSWindow
 @property NSWindowStyleMask styleMask;
 @property NSWindowStyleMask originalStyleMask;
 - (id)initWithShell:(electron::NativeWindowMac*)shell
           styleMask:(NSUInteger)styleMask;
+- (void)setPreventsActivation:(BOOL)prevents;
 @end
 
 #endif  // ELECTRON_SHELL_BROWSER_UI_COCOA_ELECTRON_NS_PANEL_H_
