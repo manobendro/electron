@@ -12,11 +12,38 @@
           styleMask:(NSUInteger)styleMask {
   if (self = [super initWithShell:shell styleMask:styleMask]) {
     originalStyleMask = styleMask;
+    // Set window collection behavior to prevent activation
+    // while still allowing interaction
+    // NSWindowCollectionBehavior behavior = [self collectionBehavior];
+    // behavior |= NSWindowCollectionBehaviorTransient;  // Makes window
+    // non-activating behavior |= NSWindowCollectionBehaviorIgnoresCycle;  //
+    // Excludes from window cycling behavior |=
+    // NSWindowCollectionBehaviorMoveToActiveSpace;  // Allows showing on active
+    // space [self setCollectionBehavior:behavior];
+
+    // Allow becoming key window while preventing main window status
+    // [self setCanBecomeKeyWindow:YES];
+    // [self setCanBecomeMainWindow:NO];
+    [self setPreventsActivation:YES];
+    // Set window level to floating
+
+    [self setLevel:NSFloatingWindowLevel];
   }
   return self;
 }
 
 @dynamic styleMask;
+
+// Override to prevent activation
+- (BOOL)canBecomeMainWindow {
+  return NO;
+}
+
+// Allow key window status for input handling
+- (BOOL)canBecomeKeyWindow {
+  return YES;
+}
+
 // The Nonactivating mask is reserved for NSPanel,
 // but we can use this workaround to add it at runtime
 - (NSWindowStyleMask)styleMask {
@@ -30,10 +57,30 @@
 }
 
 - (void)setCollectionBehavior:(NSWindowCollectionBehavior)collectionBehavior {
+  // Check if the behavior includes CanJoinAllSpaces
+  if (collectionBehavior & NSWindowCollectionBehaviorCanJoinAllSpaces) {
+    // Remove CanJoinAllSpaces and add MoveToActiveSpace instead
+    collectionBehavior &= ~NSWindowCollectionBehaviorCanJoinAllSpaces;
+    collectionBehavior |= NSWindowCollectionBehaviorMoveToActiveSpace;
+  }
+
   NSWindowCollectionBehavior panelBehavior =
-      (NSWindowCollectionBehaviorCanJoinAllSpaces |
-       NSWindowCollectionBehaviorFullScreenAuxiliary);
-  [super setCollectionBehavior:collectionBehavior | panelBehavior];
+      // Base behavior is the modified input behavior
+      collectionBehavior
+      // Prevent window cycling
+      | NSWindowCollectionBehaviorIgnoresCycle
+      // Making window non-activating
+      | NSWindowCollectionBehaviorTransient
+      // Can visible in fullscreen app
+      | NSWindowCollectionBehaviorFullScreenAuxiliary;
+
+  [super setCollectionBehavior:panelBehavior];
+}
+
+- (void)setPreventsActivation:(BOOL)prevents {
+  if ([self respondsToSelector:@selector(_setPreventsActivation:)]) {
+    [self _setPreventsActivation:prevents];
+  }
 }
 
 @end
